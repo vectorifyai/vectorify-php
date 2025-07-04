@@ -1,0 +1,48 @@
+{
+    "name": "vectorifyai/vectorify-php",
+    "description": "Vectorify package for PHP. The fastest way to ask AI about your data.",
+    "keywords": [
+        "php",
+        "ai",
+        "llm",
+        "rag",
+        "mcp",
+        "vector",
+        "vector database",
+        "agent",
+        "openai",
+        "sdk"
+    ],
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": ">=8.2",
+        "guzzlehttp/guzzle": "^7.0",
+        "monolog/monolog": "^3.9"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Vectorify\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Vectorify\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit --colors=always"
+    },
+    "config": {
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "allow-plugins": {
+            "php-http/discovery": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

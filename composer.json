@@ -34,7 +34,8 @@
         }
     },
     "scripts": {
-        "test": "vendor/bin/phpunit --colors=always"
+        "test": "vendor/bin/phpunit --colors=always",
+        "psalm": "vendor/bin/psalm"
     },
     "config": {
         "preferred-install": "dist",

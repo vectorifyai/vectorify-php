@@ -6,16 +6,16 @@ use Vectorify\Endpoints\Query;
 use Vectorify\Endpoints\Upserts;
 
 /**
- * Main Vectorify SDK client
+ * Vectorify SDK entry point
  *
  * Provides access to Vectorify API endpoints with built-in rate limiting,
  * retry logic, and multi-process coordination via cache backends.
  */
-class Vectorify
+final class Vectorify
 {
-    private Client $client;
-    private Upserts $upserts;
-    private Query $query;
+    public Client $client;
+    public Upserts $upserts;
+    public Query $query;
 
     /**
      * Create a new Vectorify SDK instance
@@ -31,35 +31,5 @@ class Vectorify
         $this->client = new Client($apiKey, $timeout, $cache);
         $this->upserts = new Upserts($this->client);
         $this->query = new Query($this->client);
-    }
-
-    /**
-     * Get the upsert endpoint
-     *
-     * @return Upserts Result of the upsert operation
-     */
-    public function upserts(): Upserts
-    {
-        return $this->upserts;
-    }
-
-    /**
-     * Get the query endpoint
-     *
-     * @return Query Result of the query operation
-     */
-    public function query(): Query
-    {
-        return $this->query;
-    }
-
-    /**
-     * Get the underlying HTTP client
-     *
-     * @return Client The HTTP client with rate limiting capabilities
-     */
-    public function getClient(): Client
-    {
-        return $this->client;
     }
 }

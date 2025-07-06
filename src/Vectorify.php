@@ -3,9 +3,7 @@
 namespace Vectorify;
 
 use Vectorify\Endpoints\Query;
-use Vectorify\Endpoints\Upsert;
-use Vectorify\Objects\QueryObject;
-use Vectorify\Objects\UpsertObject;
+use Vectorify\Endpoints\Upserts;
 
 /**
  * Main Vectorify SDK client
@@ -16,7 +14,7 @@ use Vectorify\Objects\UpsertObject;
 class Vectorify
 {
     private Client $client;
-    private Upsert $upsert;
+    private Upserts $upserts;
     private Query $query;
 
     /**
@@ -31,28 +29,28 @@ class Vectorify
     public function __construct(string $apiKey, int $timeout = 30, ?object $cache = null)
     {
         $this->client = new Client($apiKey, $timeout, $cache);
-        $this->upsert = new Upsert($this->client);
+        $this->upserts = new Upserts($this->client);
         $this->query = new Query($this->client);
     }
 
     /**
-     * Call the upsert endpoint
+     * Get the upsert endpoint
      *
-     * @return bool Result of the upsert operation
+     * @return Upserts Result of the upsert operation
      */
-    public function upsert(UpsertObject $object): bool
+    public function upserts(): Upserts
     {
-        return $this->upsert->send($object);
+        return $this->upserts;
     }
 
     /**
-     * Call the query endpoint
+     * Get the query endpoint
      *
-     * @return bool|array Result of the query operation
+     * @return Query Result of the query operation
      */
-    public function query(QueryObject $object): bool|array
+    public function query(): Query
     {
-        return $this->query->send($object);
+        return $this->query;
     }
 
     /**

@@ -1,6 +1,21 @@
 # Vectorify package for PHP
 
-The Vectorify PHP SDK provides a simple and elegant way to interact with the Vectorify API. Ask AI about your data with ease.
+Vectorify is the end-to-end AI connector for PHP, letting you query and explore your data in natural language in seconds.
+
+To interact with your data, you have four primary methods to choose from:
+
+1. Use the [Chats](https://app.vectorify.ai/) page within our platform (fastest)
+2. Embed the [Chatbot](https://docs.vectorify.ai/project/chatbot) into your Laravel app (turn data querying into a product feature)
+3. Add the [MCP](https://docs.vectorify.ai/mcp-server) server to ChatGPT, Claude, etc. (use your data anywhere you work)
+4. Call the REST [API](https://docs.vectorify.ai/api-reference) endpoints (build custom integrations and workflows)
+
+Unlike text-to-SQL tools that expose your entire database and take 30+ seconds per query, Vectorify uses proven RAG technology to deliver accurate answers in <4 seconds while keeping your database secure. Head to our [blog](https://vectorify.ai/blog/vectorify-laravel-unlock-ai-ready-data-in-60-seconds) to learn more about Vectorify.
+
+This package provides a simple and elegant way to interact with the Vectorify API. Ask AI about your data with ease.
+
+## Requirements
+
+- PHP 8.2 or higher
 
 ## Installation
 
@@ -56,7 +71,7 @@ $items = [
 
 // Upsert data
 $upsertObject = new UpsertObject($collection, $items);
-$success = $vectorify->upsert($upsertObject);
+$success = $vectorify->upserts->create($upsertObject);
 
 if ($success) {
     echo "Data upserted successfully!\n";
@@ -74,7 +89,7 @@ $queryObject = new QueryObject(
     ]
 );
 
-$result = $vectorify->query($queryObject);
+$result = $vectorify->query->send($queryObject);
 
 if ($result !== false) {
     print_r($result);
@@ -97,7 +112,7 @@ Create or update items in your Vectorify collection:
 
 ```php
 $upsertObject = new UpsertObject($collection, $items);
-$success = $vectorify->upsert($upsertObject);
+$success = $vectorify->upserts->create($upsertObject);
 ```
 
 ### Query
@@ -106,7 +121,7 @@ Ask questions about your data:
 
 ```php
 $queryObject = new QueryObject('your question here');
-$result = $vectorify->query($queryObject);
+$result = $vectorify->query->send($queryObject);
 ```
 
 ## Configuration
@@ -136,11 +151,18 @@ The SDK includes comprehensive error handling:
 - **Client Errors**: Returns `null` or `false` for client errors (4xx)
 - **Network Errors**: Retries network-related errors
 
-## Requirements
+## Changelog
 
-- PHP 8.2 or higher
-- Guzzle HTTP 7.0 or higher
+Please see [Releases](../../releases) for more information on what has changed recently.
+
+## Contributing
+
+Pull requests are more than welcome. You must follow the PSR coding standards.
+
+## Security
+
+Please review [our security policy](https://github.com/vectorifyai/laravel-vectorify/security/policy) on how to report security vulnerabilities.
 
 ## License
 
-This package is licensed under the MIT License.
+The MIT License (MIT). Please see [LICENSE](LICENSE.md) for more information.

@@ -2,12 +2,16 @@
 
 namespace Vectorify\Tests\Unit;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Vectorify\Client;
 
+#[CoversClass(Client::class)]
 class ClientValidationTest extends TestCase
 {
-    public function testConstructorValidatesEmptyApiKey(): void
+    #[Test]
+    public function constructor_validates_empty_api_key(): void
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('API key cannot be empty');
@@ -15,7 +19,8 @@ class ClientValidationTest extends TestCase
         new Client('');
     }
 
-    public function testConstructorValidatesWhitespaceApiKey(): void
+    #[Test]
+    public function constructor_validates_whitespace_api_key(): void
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('API key cannot be empty');
@@ -23,7 +28,8 @@ class ClientValidationTest extends TestCase
         new Client('   ');
     }
 
-    public function testConstructorValidatesNegativeTimeout(): void
+    #[Test]
+    public function constructor_validates_negative_timeout(): void
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Timeout must be positive, got: -1');
@@ -31,7 +37,8 @@ class ClientValidationTest extends TestCase
         new Client('valid-api-key', -1);
     }
 
-    public function testConstructorValidatesZeroTimeout(): void
+    #[Test]
+    public function constructor_validates_zero_timeout(): void
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Timeout must be positive, got: 0');
@@ -39,7 +46,8 @@ class ClientValidationTest extends TestCase
         new Client('valid-api-key', 0);
     }
 
-    public function testConstructorTrimsApiKey(): void
+    #[Test]
+    public function constructor_trims_api_key(): void
     {
         $client = new Client('  valid-api-key  ', 30);
 
@@ -51,7 +59,8 @@ class ClientValidationTest extends TestCase
         $this->assertEquals('valid-api-key', $apiKeyProperty->getValue($client));
     }
 
-    public function testConstructorWithValidParameters(): void
+    #[Test]
+    public function constructor_with_valid_parameters(): void
     {
         $client = new Client('valid-api-key', 60);
 

@@ -4,6 +4,7 @@ namespace Vectorify;
 
 use Vectorify\Endpoints\Query;
 use Vectorify\Endpoints\Upserts;
+use Vectorify\GuzzleRateLimiter\Contracts\StoreInterface;
 
 /**
  * Vectorify SDK entry point
@@ -22,13 +23,13 @@ final class Vectorify
      *
      * @param string $apiKey Vectorify API key
      * @param int $timeout Request timeout in seconds (default: 30)
-     * @param object|null $cache Cache instance for shared rate limiting (optional)
+     * @param StoreInterface|null $store Optional cache store for shared rate limiting
      *
      * @throws \InvalidArgumentException If apiKey is empty or timeout is invalid
      */
-    public function __construct(string $apiKey, int $timeout = 30, ?object $cache = null)
+    public function __construct(string $apiKey, int $timeout = 30, ?StoreInterface $store = null)
     {
-        $this->client = new Client($apiKey, $timeout, $cache);
+        $this->client = new Client($apiKey, $timeout, $store);
         $this->upserts = new Upserts($this->client);
         $this->query = new Query($this->client);
     }

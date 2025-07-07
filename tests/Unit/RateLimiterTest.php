@@ -2,14 +2,18 @@
 
 namespace Vectorify\Tests\Unit;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
 use Vectorify\Support\RateLimiter;
 
+#[CoversClass(RateLimiter::class)]
 class RateLimiterTest extends TestCase
 {
-    public function testConstructorWithCache(): void
+    #[Test]
+    public function constructor_with_cache(): void
     {
         $cache = new class {
             public function get($key) { return null; }
@@ -20,14 +24,16 @@ class RateLimiterTest extends TestCase
         $this->assertInstanceOf(RateLimiter::class, $rateLimiter);
     }
 
-    public function testConstructorWithoutCache(): void
+    #[Test]
+    public function constructor_without_cache(): void
     {
         $rateLimiter = new RateLimiter();
 
         $this->assertInstanceOf(RateLimiter::class, $rateLimiter);
     }
 
-    public function testCheckRateLimitWithoutCacheData(): void
+    #[Test]
+    public function check_rate_limit_without_cache_data(): void
     {
         $rateLimiter = new RateLimiter();
 
@@ -39,7 +45,8 @@ class RateLimiterTest extends TestCase
         $this->assertLessThanOrEqual(1, $endTime - $startTime);
     }
 
-    public function testUpdateRateLimitFromResponse(): void
+    #[Test]
+    public function update_rate_limit_from_response(): void
     {
         $response = $this->createMock(ResponseInterface::class);
         $response->method('getHeaders')->willReturn([
@@ -56,7 +63,8 @@ class RateLimiterTest extends TestCase
         $rateLimiter->updateRateLimit($response);
     }
 
-    public function testUpdateRateLimitWithoutHeaders(): void
+    #[Test]
+    public function update_rate_limit_without_headers(): void
     {
         $response = $this->createMock(ResponseInterface::class);
         $response->method('getHeaders')->willReturn([]);
@@ -71,7 +79,8 @@ class RateLimiterTest extends TestCase
         $this->assertTrue(true); // Just ensure no exception was thrown
     }
 
-    public function testHandleRateLimitResponse(): void
+    #[Test]
+    public function handle_rate_limit_response(): void
     {
         $response = $this->createMock(ResponseInterface::class);
         $response->method('getHeaders')->willReturn([

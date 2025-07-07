@@ -6,12 +6,18 @@ use Exception;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware;
 use GuzzleHttp\RequestOptions;
+use GuzzleHttp\RetryMiddleware;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
+use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
-use Vectorify\Support\RateLimiter;
+use Vectorify\GuzzleRateLimiter\Contracts\StoreInterface;
+use Vectorify\GuzzleRateLimiter\RateLimiterMiddleware;
+use Vectorify\GuzzleRateLimiter\Stores\InMemoryStore;
 
 class Client
 {
@@ -21,7 +27,6 @@ class Client
     private string $apiKey;
     private int $timeout;
     private GuzzleClient $httpClient;
-    private RateLimiter $rateLimiter;
     private LoggerInterface $logger;
 
     /**
@@ -29,7 +34,7 @@ class Client
      *
      * @param string $apiKey The Vectorify API key (cannot be empty)
      * @param int $timeout Request timeout in seconds (must be positive)
-     * @param object|null $cache Optional cache instance for rate limiting coordination
+     * @param StoreInterface|null $store Optional cache store for rate limiting coordination
      * @param LoggerInterface|null $logger Optional logger instance
      *
      * @throws \InvalidArgumentException If apiKey is empty or timeout is not positive
@@ -37,7 +42,7 @@ class Client
     public function __construct(
         string $apiKey,
         int $timeout = 30,
-        ?object $cache = null,
+        ?StoreInterface $store = null,
         ?LoggerInterface $logger = null,
     ) {
         if (empty(trim($apiKey))) {
@@ -51,10 +56,26 @@ class Client
         $this->apiKey = trim($apiKey);
         $this->timeout = $timeout;
         $this->logger = $logger ?: $this->createDefaultLogger();
-        $this->rateLimiter = new RateLimiter($cache, 'vectorify:api:rate_limit', $this->logger);
+
+        // Create handler stack with rate limiting and retry middleware
+        $stack = HandlerStack::create();
+
+        // Add rate limiting middleware
+        $rateLimitStore = $store ?: new InMemoryStore();
+        $rateLimiterMiddleware = new RateLimiterMiddleware(
+            $rateLimitStore,
+            'vectorify:api:rate_limit',
+            $this->logger
+        );
+        $stack->push($rateLimiterMiddleware);
+
+        // Add retry middleware for server errors
+        $stack->push($this->getRetryMiddleware(self::MAX_RETRY_ATTEMPTS));
+
         $this->httpClient = new GuzzleClient([
             'base_uri' => $this->baseUrl,
             'timeout' => $this->timeout,
+            'handler' => $stack,
         ]);
     }
 
@@ -84,13 +105,13 @@ class Client
     }
 
     /**
-     * Execute an HTTP request with retry logic and rate limiting
+     * Execute an HTTP request with automatic retry and rate limiting via middleware
      *
      * @param string $method HTTP method (GET, POST, PUT, PATCH, DELETE)
      * @param string $path API endpoint path
      * @param array $options Additional request options for Guzzle
      *
-     * @return ResponseInterface|null Response object or null on failure
+     * @return ResponseInterface|null Response object or null on client errors
      * @throws \Exception On unrecoverable errors after all retries
      */
     public function request(
@@ -98,115 +119,65 @@ class Client
         string $path,
         array $options = [],
     ): ?ResponseInterface {
-        $attempts = 0;
-        $maxAttempts = self::MAX_RETRY_ATTEMPTS;
+        try {
+            $requestOptions = array_merge([
+                RequestOptions::HEADERS => [
+                    'Api-Key' => $this->apiKey,
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'application/json',
+                ],
+            ], $options);
 
-        while ($attempts < $maxAttempts) {
-            $attempts++;
+            $response = $this->httpClient->request($method, $path, $requestOptions);
 
-            try {
-                // Check rate limits before making request
-                $this->rateLimiter->checkRateLimit();
+            return $response;
 
-                $requestOptions = array_merge([
-                    RequestOptions::HEADERS => [
-                        'Api-Key' => $this->apiKey,
-                        'Content-Type' => 'application/json',
-                        'Accept' => 'application/json',
-                    ],
-                ], $options);
+        } catch (GuzzleException $e) {
+            // Handle client errors (4xx) by returning null
+            if ($e instanceof RequestException && $e->hasResponse()) {
+                $response = $e->getResponse();
+                $statusCode = $response->getStatusCode();
 
-                $response = $this->httpClient->request($method, $path, $requestOptions);
-
-                // Update rate limit information from response
-                $this->rateLimiter->updateRateLimit($response);
-
-                return $response;
-
-            } catch (GuzzleException $e) {
-                $response = null;
-
-                if ($e instanceof RequestException) {
-                    $response = $e->getResponse();
-                }
-
-                if ($response) {
-                    $statusCode = $response->getStatusCode();
-
-                    // Update rate limit information from error response
-                    $this->rateLimiter->updateRateLimit($response);
-
-                    // Handle rate limit responses specifically
-                    if ($statusCode === 429) {
-                        $this->logger->warning('Rate limit exceeded, will retry after waiting', [
-                            'status' => $statusCode,
-                            'headers' => $response->getHeaders(),
-                            'attempt' => $attempts,
-                        ]);
-
-                        // Handle rate limit response using RateLimiter
-                        $this->rateLimiter->handleRateLimitResponse($response);
-
-                        if ($attempts < $maxAttempts) {
-                            continue; // Retry
-                        }
-
-                        throw new Exception('Rate limit exceeded after all retries');
-                    }
-
-                    // Handle server errors with retry
-                    if ($statusCode >= 500) {
-                        $this->logger->warning('Server error encountered, will retry', [
-                            'status' => $statusCode,
-                            'attempt' => $attempts,
-                        ]);
-
-                        if ($attempts < $maxAttempts) {
-                            $backoffTime = min(pow(2, $attempts - 1), 60);
-
-                            $this->logger->info("Retrying request in {$backoffTime} seconds", [
-                                'attempt' => $attempts,
-                                'exception' => $e->getMessage(),
-                            ]);
-
-                            sleep($backoffTime);
-
-                            continue; // Retry
-                        }
-
-                        throw new Exception("Server error after all retries: {$statusCode}");
-                    }
-
-                    // For client errors, don't retry
-                    if ($statusCode >= 400 && $statusCode < 500) {
-                        $this->logger->warning('Client error encountered', [
-                            'status' => $statusCode,
-                            'response' => $response->getBody()->getContents(),
-                        ]);
-
-                        return null;
-                    }
-                }
-
-                // For other exceptions, retry with exponential backoff
-                if ($attempts < $maxAttempts) {
-                    $backoffTime = min(pow(2, $attempts - 1), 60);
-
-                    $this->logger->info("Retrying request in {$backoffTime} seconds", [
-                        'attempt' => $attempts,
-                        'exception' => $e->getMessage(),
+                if ($statusCode >= 400 && $statusCode < 500 && $statusCode !== 429) {
+                    $this->logger->warning('Client error encountered', [
+                        'status' => $statusCode,
+                        'response' => $response->getBody()->getContents(),
                     ]);
 
-                    sleep($backoffTime);
-
-                    continue; // Retry
+                    return null;
                 }
-
-                throw $e;
             }
-        }
 
-        return null;
+            // Re-throw other exceptions (middleware will handle retries)
+            throw $e;
+        }
+    }
+
+    /**
+     * Create retry middleware for server errors
+     *
+     * @param int $maxRetries Maximum number of retry attempts
+     * @return callable Retry middleware function
+     */
+    private function getRetryMiddleware(int $maxRetries): callable
+    {
+        $decider = function (
+            int $retries,
+            RequestInterface $request,
+            ResponseInterface $response = null
+        ) use ($maxRetries): bool {
+            // Retry on server errors (5xx) but not rate limits (429 is handled by rate limiter)
+            return $retries < $maxRetries
+                && null !== $response
+                && $response->getStatusCode() >= 500;
+        };
+
+        $delay = function (int $retries, ResponseInterface $response): int {
+            // Exponential backoff for server errors
+            return RetryMiddleware::exponentialDelay($retries) * 1000; // Convert to milliseconds
+        };
+
+        return Middleware::retry($decider, $delay);
     }
 
     /**

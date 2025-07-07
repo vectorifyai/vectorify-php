@@ -2,12 +2,16 @@
 
 namespace Vectorify\Tests\Unit;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use Vectorify\Objects\CollectionObject;
 use Vectorify\Tests\TestCase;
 
+#[CoversClass(CollectionObject::class)]
 class CollectionObjectTest extends TestCase
 {
-    public function test_can_create_collection_object(): void
+    #[Test]
+    public function can_create_collection_object(): void
     {
         $collection = new CollectionObject('test-slug', ['key' => 'value']);
 
@@ -15,7 +19,8 @@ class CollectionObjectTest extends TestCase
         $this->assertEquals(['key' => 'value'], $collection->metadata);
     }
 
-    public function test_can_convert_to_array(): void
+    #[Test]
+    public function can_convert_to_array(): void
     {
         $collection = new CollectionObject('test-slug', ['key' => 'value']);
 
@@ -27,7 +32,8 @@ class CollectionObjectTest extends TestCase
         $this->assertEquals($expected, $collection->toArray());
     }
 
-    public function test_can_convert_to_payload(): void
+    #[Test]
+    public function can_convert_to_payload(): void
     {
         $collection = new CollectionObject('test-slug', ['key' => 'value']);
 

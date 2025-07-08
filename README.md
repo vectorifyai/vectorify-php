@@ -1,11 +1,16 @@
 # Vectorify package for PHP
 
+[![Latest Version](https://img.shields.io/packagist/v/vectorifyai/vectorify-php.svg?label=latest&style=flat)](https://packagist.org/packages/vectorifyai/vectorify-php)
+[![Total Downloads](https://img.shields.io/packagist/dt/vectorifyai/vectorify-php.svg?style=flat)](https://packagist.org/packages/vectorifyai/vectorify-php)
+[![Tests](https://img.shields.io/github/actions/workflow/status/vectorifyai/vectorify-php/tests.yml?label=tests&style=flat)](https://github.com/vectorifyai/vectorify-php/actions/workflows/tests.yml)
+[![License](https://img.shields.io/packagist/l/vectorifyai/vectorify-php.svg?style=flat)](LICENSE.md)
+
 Vectorify is the end-to-end AI connector for PHP, letting you query and explore your data in natural language in seconds.
 
 To interact with your data, you have four primary methods to choose from:
 
 1. Use the [Chats](https://app.vectorify.ai/) page within our platform (fastest)
-2. Embed the [Chatbot](https://docs.vectorify.ai/project/chatbot) into your Laravel app (turn data querying into a product feature)
+2. Embed the [Chatbot](https://docs.vectorify.ai/project/chatbot) into your PHP app (turn data querying into a product feature)
 3. Add the [MCP](https://docs.vectorify.ai/mcp-server) server to ChatGPT, Claude, etc. (use your data anywhere you work)
 4. Call the REST [API](https://docs.vectorify.ai/api-reference) endpoints (build custom integrations and workflows)
 

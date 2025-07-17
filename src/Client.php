@@ -164,7 +164,7 @@ class Client
         $decider = function (
             int $retries,
             RequestInterface $request,
-            ResponseInterface $response = null
+            ResponseInterface $response = null,
         ) use ($maxRetries): bool {
             // Retry on server errors (5xx) but not rate limits (429 is handled by rate limiter)
             return $retries < $maxRetries
@@ -174,7 +174,7 @@ class Client
 
         $delay = function (int $retries, ResponseInterface $response): int {
             // Exponential backoff for server errors
-            return RetryMiddleware::exponentialDelay($retries) * 1000; // Convert to milliseconds
+            return RetryMiddleware::exponentialDelay($retries);
         };
 
         return Middleware::retry($decider, $delay);

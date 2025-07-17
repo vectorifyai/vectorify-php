@@ -63,9 +63,9 @@ class Client
         // Add rate limiting middleware
         $rateLimitStore = $store ?: new InMemoryStore();
         $rateLimiterMiddleware = new RateLimiterMiddleware(
-            $rateLimitStore,
-            'vectorify:api:rate_limit',
-            $this->logger
+            store: $rateLimitStore,
+            cachePrefix: 'vectorify:api:rate_limit',
+            logger: $this->logger
         );
         $stack->push($rateLimiterMiddleware);
 
@@ -159,7 +159,7 @@ class Client
      * @param int $maxRetries Maximum number of retry attempts
      * @return callable Retry middleware function
      */
-    private function getRetryMiddleware(int $maxRetries): callable
+    public function getRetryMiddleware(int $maxRetries): callable
     {
         $decider = function (
             int $retries,
